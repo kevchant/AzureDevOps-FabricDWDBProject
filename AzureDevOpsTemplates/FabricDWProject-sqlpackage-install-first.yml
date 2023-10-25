@@ -1,0 +1,115 @@
+# This is a pipeline to creates a dacpac based on the contents of a Microsoft Fabric Data Warehouse Database Project
+# From there it deploys the dacpac file to another Microsoft Fabric Data Warehouse
+
+# Please note that you need the below variables created for this to work
+# I recommend doing this by creating at least one variable group
+#   agentpool - The name of the agent pool you want to use (ideally a self-hosted one with latest sqlpackage installed)
+#     Otherwise you must put additional logic in this pipeline to deploy latest version of sqlpackage onto the agent
+#   BuildConfiguration - Configuration for build (Dev, Test, Release, etc)
+#   SQLPoolartifactname - A name for the created artifact
+#   AzureSubscription - A reference to an Azure subscription is required for the task to work, can be any one as will not be used
+#   aadSqlUsername - Azure AD/MS Entra account used
+#   aadSqlpw - Azure AD/MS Entra account used
+#   DestSQLConnString - The connection string for the Fabric Data Warehouse (found in settings)
+#   DestinationDW - The name of the Data Warehouse
+#   Targetfile - Name of the dacpac file created (default is dame name as .sqlproj file, in this case FabricDWproject.dacpac)
+
+
+
+# This pipeline uses the variable group: SQLPackageTest
+# Feel free to create youw own and use the below
+variables:
+- group: FabricDW
+
+trigger:
+- main
+
+# In this pipeline I use a Microsoft-hosted agent
+# To reference a self-hosted agent instead swap around the commented and uncommented references
+pool:
+  vmImage: 'windows-latest'
+  # name: $(agentpool)
+
+stages:
+
+- stage: Pooldacpac
+  displayName: 'Build dacpac'
+
+  jobs:
+    - job: 'Builddacpac'
+      displayName: 'Build SQL Pool dacpac'
+      
+      # pool:
+      #   vmImage: 'windows-latest'
+
+      steps:
+   
+      # First install latest version of SqlPackage
+      - task: PowerShell@2
+        inputs:
+          targetType: 'inline'
+          script: 'dotnet tool update -g microsoft.sqlpackage'
+      
+      # Then build the project using a .NET task
+      - task: DotNetCoreCLI@2
+        displayName: 'Build the dacpac using dotnet'
+        inputs:
+          command: 'build'
+          projects: 'FabricDWProject.sqlproj'
+          arguments: '--configuration $(BuildConfiguration)'
+      
+      #Then publish it as part of artifact
+      - task: PublishBuildArtifacts@1
+        displayName: 'Publishes dacpac as an artifact'
+        # Publishes the dacpac as part of an artifact within Azure DevOps
+        inputs:
+          PathtoPublish: 'bin/$(BuildConfiguration)'
+          ArtifactName: $(SQLPoolartifactname)
+          publishLocation: 'Container'
+
+# Now lets deploy the dacpac to a Fabric Data Warehouse
+# Note that doing this using a deployment job so can state environment
+- stage: FabricDW
+  displayName: 'Deploy Data warehouse'
+  jobs:
+    - deployment: 'FabricDW'
+      displayName: 'Fabric Datawarehouse'
+      environment: Production
+
+      # Just to raise awareness that you can select pools at different stages
+      # pool: 
+      #   vmImage: 'windows-latest'
+
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+                  # First install latest version of SqlPackage through MSI to recognized by the deployment task properly     
+                  - task: PowerShell@2
+                    displayName: 'upgrade sqlpackage'
+                    inputs:
+                      targetType: 'inline'
+                      script: |
+                        # use evergreen or specific dacfx msi link below
+                        wget -O DacFramework.msi "https://aka.ms/dacfx-msi"
+                        msiexec.exe /i "DacFramework.msi" /qn
+                  - task: DownloadBuildArtifacts@0
+                    displayName: 'Dowload Artifacts'
+                    inputs:
+                      buildType: 'current'
+                      downloadType: 'specific'
+                      artifactName:  '$(SQLPoolartifactname)'
+                      downloadPath: '$(System.ArtifactsDirectory)'
+
+                  - task: SqlAzureDacpacDeployment@1
+                    displayName: 'Install DACPAC on Fabric DataWarehouse'
+                    inputs:
+                      azureSubscription: $(AzureSubscription)
+                      AuthenticationType: 'aadAuthenticationPassword'
+                      aadSqlUsername: '$(aadSqlUsername)'
+                      aadSqlPassword: '$(aadSqlpw)'
+                      ServerName: $(DestSQLConnString)
+                      DatabaseName: '$(DestinationDW)'
+                      deployType: 'DacpacTask'
+                      DeploymentAction: 'Publish'
+                      DacpacFile: '$(System.ArtifactsDirectory)\$(SQLPoolartifactname)\$(Targetfile)'
