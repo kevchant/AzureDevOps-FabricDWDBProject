@@ -1,8 +1,8 @@
-# AzureDevOps-FabricDWDBProject
+# AzureDevOps-FabricDWDBProject for Microsoft Fabric Data Warehouses
 
 Contains a template that you can use to perform CI/CD for Microsoft Fabric Data Warehouses. Based on a blog post I wrote called '[CI/CD for Microsoft Fabric Data Warehouses using YAML Pipelines](https://www.kevinrchant.com/2023/10/25/ci-cd-for-microsoft-fabric-data-warehouses-using-yaml-pipelines/)'.
 
-Which creates deploys to a Microsoft Fabric Data Warehouse. 
+It can be used to deploy the contents of a Database Project to a Microsoft Fabric Data Warehouse. Using the new target platform.
 
 A brief overview is below. However, there is also a [wiki for this project](https://github.com/kevchant/AzDo-FabricDWDBProject/wiki).
 
