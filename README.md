@@ -4,7 +4,7 @@ Contains a template that you can use to perform CI/CD for Microsoft Fabric Data 
 
 It can be used to deploy the contents of a Database Project to a Microsoft Fabric Data Warehouse. Using the new target platform.
 
-A brief overview is below. However, there is also a [wiki for this project](https://github.com/kevchant/AzDo-FabricDWDBProject/wiki).
+A brief overview is below. However, there is also a [wiki for this project](https://github.com/kevchant/AzDo-FabricDWDBProject/wiki) that covers multiple topics.
 
 It uses a YAML pipeline, which you can find in the AzureDevOpsTemplates folder.
 
