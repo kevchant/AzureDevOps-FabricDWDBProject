@@ -2,7 +2,7 @@
 
 Contains a template that you can use to perform CI/CD for Microsoft Fabric Data Warehouses. Based on a blog post I wrote called '[CI/CD for Microsoft Fabric Data Warehouses using YAML Pipelines](https://www.kevinrchant.com/2023/10/25/ci-cd-for-microsoft-fabric-data-warehouses-using-yaml-pipelines/)'.
 
-It can be used to deploy the contents of a Database Project to a Microsoft Fabric Data Warehouse. Using the new target platform.
+It can be used to deploy the contents of a [SQL database project](https://learn.microsoft.com/en-us/sql/tools/sql-database-projects/sql-database-projects?view=sql-server-ver16&WT.mc_id=DP-MVP-5004032%3Fview%3Dsql-server-ver16) to a Microsoft Fabric Data Warehouse. Using the new target platform.
 
 A brief overview is below. However, there is also a [wiki for this project](https://github.com/kevchant/AzDo-FabricDWDBProject/wiki) that covers multiple topics.
 
